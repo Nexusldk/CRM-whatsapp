@@ -13,8 +13,19 @@ export default async function handler(req, res) {
       const isAdmin = session.user.role === 'admin';
       const userId = session.user.id;
 
-      // Traer contactos según el rol
-      let query = supabase.from('contacts').select('*, messages(*)').order('updated_at', { ascending: false });
+      // Traer contactos según el rol, limitando los mensajes a los últimos 25 para no agotar la cuota
+      let query = supabase
+        .from('contacts')
+        .select(`
+          id, name, phone, jid, status, last_message, bot_active, quote_data, assigned_to, updated_at,
+          messages (
+            id, sender, text, media_path, media_type, media_name, created_at
+          )
+        `)
+        .order('updated_at', { ascending: false })
+        .order('created_at', { foreignTable: 'messages', ascending: false })
+        .limit(25, { foreignTable: 'messages' });
+
       if (!isAdmin) {
         query = query.eq('assigned_to', userId);
       }
@@ -32,17 +43,32 @@ export default async function handler(req, res) {
         botActive: c.bot_active,
         quoteData: c.quote_data || {},
         assignedTo: c.assigned_to,
-        time: c.updated_at ? new Date(c.updated_at).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Cordoba', hour: '2-digit', minute: '2-digit' }) : '',
-        messages: (c.messages || []).map(m => ({
-          id: m.id,
-          sender: m.sender,
-          text: m.text,
-          mediaId: m.media_path ? m.id : null,
-          mediaType: m.media_type || null,
-          mediaName: m.media_name || null,
-          createdAt: m.created_at, // Guardamos la fecha real para ordenar bien
-          time: m.created_at ? new Date(m.created_at).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Cordoba', hour: '2-digit', minute: '2-digit' }) : ''
-        })).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) // 🕒 ORDEN CRONOLÓGICO REAL POR FECHA
+        time: c.updated_at
+          ? new Date(c.updated_at).toLocaleTimeString('es-AR', {
+              timeZone: 'America/Argentina/Cordoba',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '',
+        // Reordenamos de forma ascendente para mostrar el chat cronológicamente en pantalla
+        messages: (c.messages || [])
+          .map((m) => ({
+            id: m.id,
+            sender: m.sender,
+            text: m.text,
+            mediaId: m.media_path ? m.id : null,
+            mediaType: m.media_type || null,
+            mediaName: m.media_name || null,
+            createdAt: m.created_at,
+            time: m.created_at
+              ? new Date(m.created_at).toLocaleTimeString('es-AR', {
+                  timeZone: 'America/Argentina/Cordoba',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '',
+          }))
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
       }));
 
       return res.status(200).json(formatted);
