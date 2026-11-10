@@ -11,7 +11,7 @@
   <title>DCAM CRM · iPad</title>
   <link rel="apple-touch-icon" href="/ipad/icon.png">
   <link rel="icon" type="image/png" href="/ipad/icon.png">
-  <link rel="stylesheet" href="/ipad/app.css?v=1">
+  <link rel="stylesheet" href="/ipad/app.css?v=2">
 </head>
 <body>
   <noscript>Activá JavaScript en Ajustes &gt; Safari &gt; Avanzado para usar el CRM.</noscript>
@@ -29,7 +29,7 @@
         <p id="login-error" class="form-error" role="alert"></p>
         <button id="login-button" class="primary" type="submit" disabled>Comprobando conexión…</button>
       </form>
-      <p class="login-note">Acceso con tu cuenta habitual · Vista de consulta</p>
+      <p class="login-note">Acceso con tu cuenta habitual · CRM para iPad</p>
       <button id="install-login" class="text-button" type="button">Agregar a la pantalla de inicio</button>
     </div>
   </section>
@@ -85,7 +85,14 @@
           </nav>
           <div id="messages" class="messages" tabindex="0" aria-label="Historial de mensajes"></div>
           <div id="client-file" class="client-file hidden"></div>
-          <footer class="detail-footer">Vista de consulta · Los cambios se realizan desde el CRM completo.</footer>
+          <form id="reply-form" class="composer">
+            <div class="reply-field">
+              <label class="sr-only" for="reply-text">Respuesta por WhatsApp</label>
+              <textarea id="reply-text" placeholder="Escribí tu respuesta…" rows="2" maxlength="12000" aria-describedby="send-status"></textarea>
+            </div>
+            <button id="send-button" class="send-button" type="submit" disabled>Enviar</button>
+            <p id="send-status" class="send-status" role="status" aria-live="polite">Tu respuesta se envía por WhatsApp.</p>
+          </form>
         </div>
       </section>
     </main>
@@ -94,6 +101,6 @@
   <div id="install-dialog" class="dialog-screen hidden" role="dialog" aria-modal="true" aria-labelledby="install-title">
     <div class="dialog-card"><p class="eyebrow">TU CRM COMO APP</p><h2 id="install-title">Siempre a un toque.</h2><p>En Safari, tocá <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba), elegí <strong>Agregar a inicio</strong> y confirmá <strong>Agregar</strong>.</p><p>Después abrí <strong>DCAM CRM</strong> desde su ícono. Necesitás conexión a Internet.</p><button id="close-install" class="primary" type="button">Entendido</button></div>
   </div>
-  <script src="/ipad/app.js?v=1"></script>
+  <script src="/ipad/app.js?v=2"></script>
 </body>
 </html>

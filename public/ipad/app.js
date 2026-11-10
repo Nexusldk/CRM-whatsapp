@@ -4,7 +4,8 @@
 
   var state = { contacts: [], selectedId: null, tab: 'chat', contactLimit: 70,
     messageLimit: 70, session: null, busy: false, timer: null, generation: 0,
-    messageKey: '', filterKey: '', filterValue: '', searchTimer: null };
+    messageKey: '', filterKey: '', filterValue: '', searchTimer: null,
+    drafts: {}, sendStatus: {}, sending: false, sendingId: null };
   var ids = ['login', 'app', 'login-form', 'username', 'password', 'login-error',
     'login-button', 'sync', 'refresh', 'menu-button', 'menu', 'user-name',
     'logout', 'total', 'quoted', 'closed', 'notice', 'workspace', 'search',
@@ -12,7 +13,7 @@
     'welcome', 'selected', 'client-avatar', 'client-name', 'client-phone',
     'client-status', 'chat-tab', 'file-tab', 'sol-state', 'messages',
     'client-file', 'back', 'install-login', 'install-app', 'install-dialog',
-    'close-install'];
+    'close-install', 'reply-form', 'reply-text', 'send-button', 'send-status'];
   var ui = {}, i;
   for (i = 0; i < ids.length; i += 1) { ui[ids[i]] = document.getElementById(ids[i]); }
 
@@ -42,15 +43,17 @@
     } }
     return pairs.join('&');
   }
-  function request(method, path, data, callback) {
-    var xhr = new XMLHttpRequest(), ended = false;
-    function finish(error, value) { if (!ended) { ended = true; callback(error, value); } }
+  function request(method, path, data, callback, options) {
+    var xhr = new XMLHttpRequest(), ended = false, watchdog, timeout = options && options.timeout || 22000;
+    function finish(error, value) {
+      if (!ended) { ended = true; if (watchdog) { window.clearTimeout(watchdog); } callback(error, value); }
+    }
     /* Safari 9 may cache GET responses aggressively. Keep session and CRM reads fresh. */
     if (method === 'GET') { path += (path.indexOf('?') === -1 ? '?' : '&') + '_dcam=' + new Date().getTime(); }
     xhr.open(method, path, true);
-    xhr.timeout = 22000;
+    xhr.timeout = timeout;
     xhr.setRequestHeader('Accept', 'application/json');
-    if (data !== null) { xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); }
+    if (data !== null) { xhr.setRequestHeader('Content-Type', options && options.json ? 'application/json' : 'application/x-www-form-urlencoded'); }
     xhr.onreadystatechange = function () {
       var parsed;
       if (xhr.readyState !== 4) { return; }
@@ -58,16 +61,21 @@
         finish({ auth: true, message: 'Tu sesión venció. Ingresá nuevamente.' }); return;
       }
       try { parsed = JSON.parse(xhr.responseText); } catch (ignore) {
-        finish({ message: 'El CRM no devolvió una respuesta válida. Comprobá que crm.dechinaalmundo.com.ar esté disponible.' }); return;
+        finish({ message: 'El CRM no devolvió una respuesta válida. Comprobá que crm.dechinaalmundo.com.ar esté disponible.', uncertain: !!(options && options.json) || xhr.status === 0 }); return;
       }
       if (xhr.status < 200 || xhr.status >= 300) {
-        finish({ message: 'No se pudo consultar el CRM (error ' + xhr.status + '). Intentá nuevamente.' }); return;
+        finish({ message: 'El CRM devolvió un error (' + xhr.status + '). Intentá nuevamente.', status: xhr.status, uncertain: xhr.status >= 500 }); return;
       }
       finish(null, parsed);
     };
-    xhr.onerror = function () { finish({ message: 'Sin conexión con el CRM. Revisá Internet y tocá Actualizar.' }); };
-    xhr.ontimeout = function () { finish({ message: 'El CRM está tardando en responder. Intentá nuevamente.' }); };
-    xhr.send(data === null ? null : formEncode(data));
+    xhr.onerror = function () { finish({ message: 'Sin conexión con el CRM. Revisá Internet y tocá Actualizar.', uncertain: true }); };
+    xhr.ontimeout = function () { finish({ message: 'El CRM está tardando en responder. Intentá nuevamente.', uncertain: true }); };
+    /* A second deadline also covers old WebKit versions that miss XHR timeout events. */
+    watchdog = window.setTimeout(function () {
+      finish({ message: 'El CRM está tardando en responder. Intentá nuevamente.', uncertain: true });
+      xhr.abort();
+    }, timeout + 1000);
+    xhr.send(data === null ? null : options && options.json ? JSON.stringify(data) : formEncode(data));
   }
   function loginScreen(message) {
     state.generation += 1;
@@ -77,6 +85,8 @@
     state.messageKey = '';
     state.filterKey = '';
     state.busy = false;
+    state.drafts = {}; state.sendStatus = {}; state.sending = false; state.sendingId = null;
+    ui['reply-text'].value = '';
     if (state.timer) { window.clearTimeout(state.timer); state.timer = null; }
     clear(ui.contacts); clear(ui.messages); clear(ui['client-file']);
     text(ui['client-name'], ''); text(ui['client-phone'], ''); text(ui['user-name'], '');
@@ -198,7 +208,7 @@
   function renderSelected(force) {
     var c = selectedContact();
     show(ui.welcome, !c); show(ui.selected, !!c);
-    if (!c) { clear(ui.messages); clear(ui['client-file']); state.messageKey = ''; return; }
+    if (!c) { clear(ui.messages); clear(ui['client-file']); state.messageKey = ''; show(ui['reply-form'], false); return; }
     text(ui['client-avatar'], initial(c.name || c.phone));
     text(ui['client-name'], c.name || c.phone || 'Sin nombre');
     text(ui['client-phone'], c.phone ? '+' + String(c.phone).replace(/^\+/, '') : 'Teléfono no informado');
@@ -209,8 +219,53 @@
     ui['chat-tab'].setAttribute('aria-pressed', state.tab === 'chat' ? 'true' : 'false');
     ui['file-tab'].setAttribute('aria-pressed', state.tab === 'file' ? 'true' : 'false');
     show(ui.messages, state.tab === 'chat'); show(ui['client-file'], state.tab === 'file');
+    show(ui['reply-form'], state.tab === 'chat'); renderComposer(c);
     if (state.tab === 'chat') { renderMessages(c, force); } else { renderFile(c); }
   }
+  function renderComposer(c) {
+    var id = String(c.id), status = state.sendStatus[id], value = state.drafts[id] || '', canSend = !!(c.phone || c.jid);
+    if (ui['reply-text'].value !== value) { ui['reply-text'].value = value; }
+    ui['reply-text'].disabled = !canSend || state.sending && state.sendingId === id;
+    ui['send-button'].disabled = !canSend || state.sending || !value.replace(/^\s+|\s+$/g, '');
+    text(ui['send-button'], state.sending && state.sendingId === id ? 'Enviando…' : 'Enviar');
+    text(ui['send-status'], !canSend ? 'Este cliente no tiene un número de WhatsApp registrado.' : status ? status.message : 'Tu respuesta se envía por WhatsApp.');
+    ui['send-status'].className = 'send-status' + (status && status.kind ? ' ' + status.kind : '');
+  }
+  ui['reply-text'].oninput = function () {
+    var c = selectedContact(), id;
+    if (!c) { return; }
+    id = String(c.id); state.drafts[id] = ui['reply-text'].value;
+    if (!state.sending && state.sendStatus[id] && state.sendStatus[id].kind === 'success') { delete state.sendStatus[id]; }
+    renderComposer(c);
+  };
+  ui['reply-form'].onsubmit = function (event) {
+    var c = selectedContact(), id, message, generation = state.generation;
+    event.preventDefault();
+    if (!c || state.sending || (!c.phone && !c.jid)) { return; }
+    id = String(c.id); message = (state.drafts[id] || '').replace(/^\s+|\s+$/g, '');
+    if (!message || message.length > 12000) { return; }
+    state.sending = true; state.sendingId = id;
+    state.sendStatus[id] = { message: 'Enviando por WhatsApp…' }; renderComposer(c);
+    request('POST', '/api/send-message', {
+      phone: c.phone || c.jid, jid: c.jid || null, message: message, contactId: c.id
+    }, function (error, result) {
+      var current;
+      if (generation !== state.generation) { return; }
+      state.sending = false; state.sendingId = null;
+      if (error && error.auth) { loginScreen('Tu sesión venció. Ingresá nuevamente para responder.'); return; }
+      if (error || !result || result.success !== true) {
+        state.sendStatus[id] = { kind: 'error', message: error && error.uncertain ?
+          'No pudimos confirmar el envío. Revisá el historial antes de reintentar.' :
+          'No se pudo enviar. Tu respuesta sigue guardada acá; revisá la conexión de WhatsApp y reintentá.' };
+      } else {
+        state.drafts[id] = '';
+        state.sendStatus[id] = { kind: 'success', message: 'Mensaje enviado. El historial se actualizará con la confirmación del servidor.' };
+        /* The webhook records the sent message once. Do not insert or PATCH a second copy. */
+        c.lastMessage = message; renderContacts(); loadContacts(true);
+      }
+      current = selectedContact(); if (current) { renderComposer(current); }
+    }, { json: true, timeout: 45000 });
+  };
   function dateLabel(value) {
     var date;
     if (!value) { return ''; }

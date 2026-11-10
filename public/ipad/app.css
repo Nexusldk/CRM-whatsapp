@@ -83,7 +83,7 @@ h1 { font-size: 34px; letter-spacing: -1px; margin: 14px 0; }
 .detail-tabs button { height: 52px; background: transparent; color: #9eacc3; font-size: 13px; padding: 0 4px; margin-right: 25px; border: 0; border-bottom: 2px solid transparent; }
 .detail-tabs button.active { color: #c8b7ff; border-bottom-color: #a583f6; }
 #sol-state { position: absolute; right: 20px; top: 19px; color: #83cbb0; font-size: 10px; }
-.messages { position: absolute; top: 133px; bottom: 38px; left: 0; right: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 23px 26px; }
+.messages { position: absolute; top: 133px; bottom: 128px; left: 0; right: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 23px 26px; }
 .day { clear: both; text-align: center; color: #7e8fa9; font-size: 10px; padding: 14px 0 24px; }
 .message-row { clear: both; overflow: hidden; padding-bottom: 14px; }
 .bubble { float: left; max-width: 83%; background: #1b273c; border: 1px solid #293852; border-radius: 12px 12px 12px 3px; padding: 12px 15px 9px; min-width: 95px; }
@@ -96,7 +96,7 @@ h1 { font-size: 34px; letter-spacing: -1px; margin: 14px 0; }
 .bubble audio { display: block; width: 240px; max-width: 100%; margin: 7px 0; }
 .media-note { color: #b8c3d5; font-size: 10px !important; }
 .load-older { display: block; margin: 0 auto 18px; }
-.client-file { position: absolute; top: 133px; bottom: 38px; left: 0; right: 0; padding: 25px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.client-file { position: absolute; top: 133px; bottom: 0; left: 0; right: 0; padding: 25px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .file-section { padding: 20px; border: 1px solid #2c3951; border-radius: 12px; margin-bottom: 20px; background: #141f31; }
 .file-section h3 { margin: 0 0 16px; font-size: 14px; color: #d3c5ff; }
 .file-section dl { margin: 0; }
@@ -104,7 +104,14 @@ h1 { font-size: 34px; letter-spacing: -1px; margin: 14px 0; }
 .field:last-child { border-bottom: 0; padding-bottom: 0; }
 .field dt { font-size: 11px; color: #95a5be; margin-bottom: 6px; }
 .field dd { font-size: 14px; margin: 0; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
-.detail-footer { position: absolute; bottom: 0; height: 38px; left: 0; right: 0; border-top: 1px solid #263147; color: #8493ac; padding: 12px 15px; text-align: center; font-size: 10px; }
+.composer { position: absolute; bottom: 0; height: 128px; left: 0; right: 0; margin: 0; border-top: 1px solid #263147; background: #111b2c; }
+.reply-field { position: absolute; top: 14px; left: 18px; right: 110px; }
+#reply-text { display: block; width: 100%; height: 66px; padding: 11px 12px; resize: none; background: #192438; color: #edf2fa; border: 1px solid #405070; border-radius: 9px; font-size: 16px; line-height: 1.4; -webkit-appearance: none; }
+#reply-text:disabled { color: #9aa8c1; }
+.send-button { position: absolute; top: 14px; right: 18px; height: 66px; width: 78px; border: 0; border-radius: 9px; background: #8761ec; color: white; font-size: 13px; font-weight: 600; }
+.send-status { position: absolute; top: 86px; left: 18px; right: 18px; margin: 0; color: #9caac1; font-size: 11px; line-height: 1.45; }
+.send-status.error { color: #ffb7aa; }
+.send-status.success { color: #8ddab8; }
 .empty { padding: 35px 20px; text-align: center; color: #91a0b8; font-size: 13px; line-height: 1.8; }
 .notice { position: absolute; z-index: 2; top: 182px; left: 0; right: 0; margin: 0; background: #453320; color: #ffdfb4; font-size: 12px; padding: 10px 18px; line-height: 1.5; }
 .has-notice .workspace { top: 235px; }
@@ -147,5 +154,5 @@ h1 { font-size: 34px; letter-spacing: -1px; margin: 14px 0; }
   .client-header .avatar { left: 52px; }
   .client-title { left: 105px; }
   .welcome { padding-top: 60px; }
-  .detail-footer { font-size: 9px; }
+  .send-status { font-size: 10px; }
 }
