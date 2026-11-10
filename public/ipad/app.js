@@ -274,7 +274,7 @@
     return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear();
   }
   function media(message, bubble) {
-    var path, link, audio, type;
+    var path, link, audio, type, note, retry, compatible;
     if (!message.mediaId) { return; }
     path = '/api/media-file?id=' + encodeURIComponent(message.mediaId);
     type = lower(message.mediaType);
@@ -284,11 +284,19 @@
       text(link, 'Ver imagen: ' + (message.mediaName || 'Abrir adjunto'));
       bubble.appendChild(link);
     } else if (type === 'audio' || type.indexOf('audio/') === 0) {
-      audio = make('audio'); audio.controls = true; audio.preload = 'none'; audio.src = path;
+      compatible = '/api/media-audio?id=' + encodeURIComponent(message.mediaId);
+      audio = make('audio'); audio.controls = true; audio.preload = 'none'; audio.src = compatible;
+      audio.setAttribute('aria-label', 'Audio de WhatsApp');
+      note = make('p', 'media-note', 'Tocá reproducir. La primera vez puede tardar unos segundos en preparar el MP3.');
+      retry = make('button', 'small-button hidden', 'Reintentar audio'); retry.type = 'button';
+      audio.onloadedmetadata = function () { text(note, 'Audio compatible con iPad.'); show(retry, false); };
+      audio.onerror = function () { text(note, 'No se pudo abrir el audio. Reintentá o tocá Abrir MP3 para ver el detalle.'); show(retry, true); };
+      retry.onclick = function () { text(note, 'Preparando audio…'); show(retry, false); audio.src = compatible + '&_audio=' + new Date().getTime(); audio.load(); var result = audio.play(); if (result && result['catch']) { result['catch'](function () {}); } };
       bubble.appendChild(audio);
-      bubble.appendChild(make('p', 'media-note', 'La reproducción depende del formato del audio y de iOS.'));
+      bubble.appendChild(note); bubble.appendChild(retry);
+      link = make('a', 'media-link', 'Abrir MP3 compatible'); link.href = compatible; link.target = '_blank'; link.rel = 'noopener noreferrer'; bubble.appendChild(link);
     }
-    link = make('a', 'media-link', message.mediaName || 'Abrir archivo adjunto');
+    link = make('a', 'media-link', (type === 'audio' || type.indexOf('audio/') === 0 ? 'Archivo original: ' : '') + (message.mediaName || 'Abrir archivo adjunto'));
     link.href = path; link.target = '_blank'; link.rel = 'noopener noreferrer';
     if (!(type === 'image' || type.indexOf('image/') === 0)) { bubble.appendChild(link); }
   }
