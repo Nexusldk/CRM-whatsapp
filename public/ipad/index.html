@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="DCAM CRM">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="referrer" content="same-origin">
+  <title>DCAM CRM · iPad</title>
+  <link rel="apple-touch-icon" href="/ipad/icon.png">
+  <link rel="icon" type="image/png" href="/ipad/icon.png">
+  <link rel="stylesheet" href="/ipad/app.css?v=1">
+</head>
+<body>
+  <noscript>Activá JavaScript en Ajustes &gt; Safari &gt; Avanzado para usar el CRM.</noscript>
+  <section id="login" class="login-screen">
+    <div class="login-card">
+      <img class="login-logo" src="/ipad/icon.png" width="76" height="76" alt="De China al Mundo">
+      <p class="eyebrow">DE CHINA AL MUNDO</p>
+      <h1>Tu CRM, a mano.</h1>
+      <p class="login-copy">Clientes, conversaciones y cotizaciones en tu iPad.</p>
+      <form id="login-form" action="/ipad/index.html" method="post">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" placeholder="Tu usuario del CRM" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" placeholder="Tu contraseña" autocomplete="current-password" required>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <button id="login-button" class="primary" type="submit" disabled>Comprobando conexión…</button>
+      </form>
+      <p class="login-note">Acceso con tu cuenta habitual · Vista de consulta</p>
+      <button id="install-login" class="text-button" type="button">Agregar a la pantalla de inicio</button>
+    </div>
+  </section>
+
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <img class="brand-icon" src="/ipad/icon.png" width="42" height="42" alt="">
+      <div class="brand"><strong>DE CHINA AL MUNDO</strong><span>CRM · Vista iPad</span></div>
+      <div class="top-actions">
+        <span id="sync" class="sync" role="status">Conectando…</span>
+        <button id="refresh" class="small-button" type="button">Actualizar</button>
+        <button id="menu-button" class="small-button" type="button" aria-expanded="false" aria-controls="menu">Menú</button>
+      </div>
+      <div id="menu" class="menu hidden">
+        <p id="user-name"></p>
+        <button id="install-app" type="button">Agregar a Inicio</button>
+        <a href="/" target="_blank" rel="noopener noreferrer">Abrir CRM completo</a>
+        <button id="logout" type="button">Cerrar sesión</button>
+      </div>
+    </header>
+    <div class="summary" aria-label="Resumen de clientes">
+      <div><span class="metric-label">CLIENTES</span><strong id="total">—</strong></div>
+      <div><span class="metric-label">COTIZADOS</span><strong id="quoted">—</strong></div>
+      <div><span class="metric-label">CERRADOS</span><strong id="closed">—</strong></div>
+      <p>Todo tu seguimiento.<br><span>En un solo lugar.</span></p>
+    </div>
+    <p id="notice" class="notice hidden" role="alert"></p>
+    <main id="workspace" class="workspace">
+      <aside class="inbox" aria-label="Clientes y conversaciones">
+        <div class="inbox-head">
+          <h2>Conversaciones <span id="result-count"></span></h2>
+          <label class="sr-only" for="search">Buscar cliente o conversación</label>
+          <input id="search" type="search" placeholder="Buscar nombre, teléfono o mensaje" autocapitalize="none" autocorrect="off">
+          <label class="sr-only" for="filter">Filtrar por estado</label>
+          <select id="filter"><option value="">Todos los estados</option></select>
+        </div>
+        <div id="contacts" class="contacts"><p class="empty">Cargando conversaciones…</p></div>
+        <div class="list-footer"><button id="more-contacts" class="text-button hidden" type="button">Ver más clientes</button><span id="list-info"></span></div>
+      </aside>
+      <section id="detail" class="detail" aria-label="Detalle del cliente">
+        <div id="welcome" class="welcome"><div class="welcome-symbol">DC</div><h2>Cada conversación cuenta.</h2><p>Elegí un cliente para consultar su historial<br>y los datos de su cotización.</p></div>
+        <div id="selected" class="hidden">
+          <header class="client-header">
+            <button id="back" class="back" type="button" aria-label="Volver a conversaciones">‹</button>
+            <div id="client-avatar" class="avatar"></div>
+            <div class="client-title"><h2 id="client-name"></h2><p id="client-phone"></p></div>
+            <span id="client-status" class="status"></span>
+          </header>
+          <nav class="detail-tabs" aria-label="Vistas del cliente">
+            <button id="chat-tab" class="active" type="button" aria-pressed="true">Conversación</button>
+            <button id="file-tab" type="button" aria-pressed="false">Ficha del cliente</button>
+            <span id="sol-state"></span>
+          </nav>
+          <div id="messages" class="messages" tabindex="0" aria-label="Historial de mensajes"></div>
+          <div id="client-file" class="client-file hidden"></div>
+          <footer class="detail-footer">Vista de consulta · Los cambios se realizan desde el CRM completo.</footer>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="install-dialog" class="dialog-screen hidden" role="dialog" aria-modal="true" aria-labelledby="install-title">
+    <div class="dialog-card"><p class="eyebrow">TU CRM COMO APP</p><h2 id="install-title">Siempre a un toque.</h2><p>En Safari, tocá <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba), elegí <strong>Agregar a inicio</strong> y confirmá <strong>Agregar</strong>.</p><p>Después abrí <strong>DCAM CRM</strong> desde su ícono. Necesitás conexión a Internet.</p><button id="close-install" class="primary" type="button">Entendido</button></div>
+  </div>
+  <script src="/ipad/app.js?v=1"></script>
+</body>
+</html>
